@@ -8,28 +8,33 @@ def scrape_google_events():
     url = "https://serpapi.com/search"
     params = {
         "engine": "google_events",
-        "q": "etkinlikler Türkiye",
+        "q": "etkinlikler Istanbul",   # Daha iyi sorgu
         "hl": "tr",
         "api_key": os.getenv("SERPAPI_KEY")
     }
 
     try:
         response = requests.get(url, params=params, timeout=20)
+        print(f"HTTP Status: {response.status_code}", file=sys.stderr)
+        print(f"📜 API Yanıt: {response.text[:500]}", file=sys.stderr)  # 🔍 Logla
+
         if response.status_code == 429:
-            print("❌ SerpApi: Ücretsiz kota doldu (429)", file=sys.stderr)
+            print("❌ SerpApi: Kotan doldu (429)", file=sys.stderr)
             return []
 
         response.raise_for_status()
         data = response.json()
 
+        if "error" in data:
+            print(f"❌ API Hatası: {data['error']}", file=sys.stderr)
+            return []
+
         events = []
         for event in data.get("events", []):
             try:
-                # Tarih
                 date_info = event.get("date", {})
                 start_date = date_info.get("start_date", "2025-01-01")
 
-                # Saat (eğer varsa)
                 when_text = date_info.get("when", "")
                 time_str = "19:00"
                 if when_text:
@@ -38,11 +43,9 @@ def scrape_google_events():
                     if time_match:
                         time_str = time_match.group(1)
 
-                # Mekan
                 venue = event.get("location", {})
                 venue_name = venue.get("name") or venue.get("address", "Bilinmeyen Mekan")
 
-                # Koordinatlar
                 gps = venue.get("gps_coordinates", {})
                 lat = float(gps["latitude"]) if gps.get("latitude") else None
                 lng = float(gps["longitude"]) if gps.get("longitude") else None
@@ -53,19 +56,19 @@ def scrape_google_events():
                     "saat": time_str,
                     "mekan_adi": venue_name,
                     "link": event.get("event_website") or event.get("google_event_link", "#"),
-                    "aciklama": event.get("description", f"{venue_name} adresinde gerçekleşecek etkinlik."),
+                    "aciklama": event.get("description", f"{venue_name} adresinde etkinlik."),
                     "latitude": lat,
                     "longitude": lng
                 })
             except Exception as e:
-                print(f"🟡 Etkinlik atlandı: {e}", file=sys.stderr)
+                print(f"🟡 Hata (etkinlik): {e}", file=sys.stderr)
                 continue
 
         print(f"{len(events)} etkinlik Google'dan çekildi.", file=sys.stderr)
         return events
 
     except Exception as e:
-        print(f"❌ Hata: {e}", file=sys.stderr)
+        print(f"❌ Genel hata: {e}", file=sys.stderr)
         return []
 
 # 🚀 Ana işlem
