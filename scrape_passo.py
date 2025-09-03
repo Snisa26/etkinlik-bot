@@ -4,7 +4,7 @@ import sys
 import json
 
 def scrape_passo():
-    url = "https://ticketingweb.passo.com.tr/api/passoweb/allevents"
+    url = "https://cppasso2.mediatriple.net/30s/api/passoweb/getalleventgroups"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Referer": "https://passo.com.tr",
