@@ -26,9 +26,6 @@ def scrape_biletix():
 
     # 🗺️ Mekan adı düzeltme (Mapping)
     venue_mapping = {
-        venue_mapping = {
-        
-        
         "Zorlu Center Sahnesi": "Zorlu Center",
         "Zorlu": "Zorlu Center",
         "Zorlu Center": "Zorlu Center",
