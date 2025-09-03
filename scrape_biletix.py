@@ -107,8 +107,4 @@ if __name__ == "__main__":
     import json
     events = scrape_biletix()
     json.dump(events, sys.stdout)
-    print("🧪 TEST BAŞLIYOR: Mekan Koordinatları")
-    test_venues = ["Zorlu Center", "Vodafone Park", "Küçükçiftlik Parkı", "Bostancı Gösteri Merkezi"]
-    for venue in test_venues:
-        lat, lng = get_coordinates(venue)
-        print(f"📍 {venue} → {lat}, {lng}")
+    
