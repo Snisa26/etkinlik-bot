@@ -26,5 +26,5 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          python scrape_biletix.py | python supabase_upload.py
+          python scrape_passo.py | python supabase_upload.py
           
