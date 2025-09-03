@@ -17,7 +17,7 @@ def upload_to_supabase(events):
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         response = supabase.table("etkinlikler").upsert(
             events,
-            on_conflict=["ad", "tarih"]
+            on_conflict="ad,tarih"
         ).execute()
 
         print(f"[BAŞARILI] Supabase'e {len(events)} etkinlik yüklendi.")
