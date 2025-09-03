@@ -75,12 +75,13 @@ def scrape_biletix():
             continue
             
 # Test
+    
+    print(f"{len(events)} etkinlik çekildi.")
+    return events
     if __name__ == "__main__":
         print("🧪 TEST BAŞLIYOR")
         test_venues = ["Zorlu Center", "Vodafone Park", "Küçükçiftlik Parkı", "Bostancı Gösteri Merkezi"]
         for venue in test_venues:
             lat, lng = get_coordinates(venue)
             print(f"📍 {venue} → {lat}, {lng}")
-    print(f"{len(events)} etkinlik çekildi.")
-    return events
     
