@@ -27,4 +27,4 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          python scrape_google_events.py | python supabase_upload.py
+          python upload_csv.py | python supabase_upload.py
