@@ -54,7 +54,7 @@ def scrape_biletix():
             else:
                 formatted_date = "2025-01-01"
 
-        # 🌍 KOORDİNAT AL
+            # 🌍 KOORDİNAT AL
             print(f"[ARA] {venue} için koordinat aranıyor...")
             lat, lng = get_coordinates(venue)
             time.sleep(1)
