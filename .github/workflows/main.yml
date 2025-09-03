@@ -24,6 +24,7 @@ jobs:
       - name: Google Etkinliklerinden çek ve Supabase'e yükle
         env:
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          sed -i 's/YOUR_API_KEY/${{ secrets.SERPAPI_KEY }}/' scrape_google_events.py
           python scrape_google_events.py | python supabase_upload.py
