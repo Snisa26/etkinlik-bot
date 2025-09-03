@@ -1,4 +1,7 @@
 # scrape_biletix.py
+# scrape_biletix.py - en üste
+from geocode import get_coordinates
+import time
 import requests
 from bs4 import BeautifulSoup
 import re
