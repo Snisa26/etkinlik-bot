@@ -1,6 +1,4 @@
 # scrape_biletix.py
-# scrape_biletix.py - en üste
-
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -26,6 +24,24 @@ def scrape_biletix():
 
     event_items = soup.find_all("div", class_="event-item")
 
+    # 🗺️ Mekan adı düzeltme (Mapping)
+    venue_mapping = {
+        "Zorlu Sahnesi": "Zorlu Center",
+        "Vodafone Park": "Vodafone Park",
+        "Küçükçiftlik Park": "Küçükçiftlik Parkı",
+        "Bostancı Show Center": "Bostancı Gösteri Merkezi",
+        "Maslak Arkadia": "Arkadia Alışveriş Merkezi",
+        "İstinye Park": "İstinye Park",
+        "Forum İstanbul": "Forum İstanbul",
+        "Cevahir Sahnesi": "Cevahir Hotel & Convention Center",
+        "Zorlu Pembe": "Zorlu Center",
+        "Pembe Sahne": "Zorlu Center",
+        "Sahne 1": "Zorlu Center",
+        "Sahne 2": "Zorlu Center",
+        "Kültür Merkezi": "İstanbul Kültür Merkezi",
+        "Sanat Merkezi": "İstanbul Sanat Merkezi"
+    }
+
     for item in event_items[:10]:
         try:
             title_elem = item.find("h3", class_="event-title")
@@ -41,24 +57,29 @@ def scrape_biletix():
             venue = venue_elem.get_text(strip=True)
             link = urljoin("https://www.biletix.com", link_elem['href'])
 
-        # Tarih formatı
+            # 📅 Tarih formatı
             match = re.search(r'(\d{1,2})\s+(\w{3})', date_text)
             if match:
                 day = match.group(1)
                 month_tr = match.group(2)
-                months = {"Oca": "01", "Şub": "02", "Mar": "03", "Nis": "04",
-                         "May": "05", "Haz": "06", "Tem": "07", "Ağu": "08",
-                         "Eyl": "09", "Eki": "10", "Kas": "11", "Ara": "12"}
+                months = {
+                    "Oca": "01", "Şub": "02", "Mar": "03", "Nis": "04",
+                    "May": "05", "Haz": "06", "Tem": "07", "Ağu": "08",
+                    "Eyl": "09", "Eki": "10", "Kas": "11", "Ara": "12"
+                }
                 month = months.get(month_tr, "01")
                 year = "2025"
                 formatted_date = f"{year}-{month}-{day.zfill(2)}"
             else:
                 formatted_date = "2025-01-01"
 
+            # 🗺️ Mekan adı düzelt
+            cleaned_venue = venue_mapping.get(venue, venue)
+
             # 🌍 KOORDİNAT AL
-            print(f"[ARA] {venue} için koordinat aranıyor...")
-            lat, lng = get_coordinates(venue)
-            time.sleep(1)
+            print(f"🔍 {cleaned_venue} için koordinat aranıyor...")
+            lat, lng = get_coordinates(cleaned_venue)
+            time.sleep(1)  # Rate limit önlemi
 
             events.append({
                 "ad": title,
@@ -73,15 +94,14 @@ def scrape_biletix():
         except Exception as e:
             print(f"Veri hatası: {e}")
             continue
-            
-# Test
-    
+
     print(f"{len(events)} etkinlik çekildi.")
     return events
-    if __name__ == "__main__":
-        print("🧪 TEST BAŞLIYOR")
-        test_venues = ["Zorlu Center", "Vodafone Park", "Küçükçiftlik Parkı", "Bostancı Gösteri Merkezi"]
-        for venue in test_venues:
-            lat, lng = get_coordinates(venue)
-            print(f"📍 {venue} → {lat}, {lng}")
-    
+
+# 🧪 Test (sadece doğrudan çalıştırılırsa)
+if __name__ == "__main__":
+    print("🧪 TEST BAŞLIYOR: Mekan Koordinatları")
+    test_venues = ["Zorlu Center", "Vodafone Park", "Küçükçiftlik Parkı", "Bostancı Gösteri Merkezi"]
+    for venue in test_venues:
+        lat, lng = get_coordinates(venue)
+        print(f"📍 {venue} → {lat}, {lng}")
