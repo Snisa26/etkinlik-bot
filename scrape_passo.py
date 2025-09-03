@@ -1,99 +1,56 @@
 # scrape_passo.py
 import requests
-from bs4 import BeautifulSoup
-import re
-from urllib.parse import urljoin
-from geocode import get_coordinates
-import time
 import sys
 import json
 
 def scrape_passo():
-    url = "https://passo.com.tr/etkinlikler?sehir=Türkiye"
+    url = "https://ticketingweb.passo.com.tr/api/passoweb/allevents"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Connection": "keep-alive",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://passo.com.tr",
+        "Origin": "https://passo.com.tr"
     }
 
     try:
         response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
+        data = response.json()
     except Exception as e:
-        print(f"Sayfa açılamadı: {e}", file=sys.stderr)
+        print(f"API hatası: {e}", file=sys.stderr)
         return []
 
-    # Kodlama hatası olmaması için
-    response.encoding = 'utf-8'
-    soup = BeautifulSoup(response.text, 'html.parser')
-
-    # Etkinlik kartlarını bul
-    event_items = soup.find_all("div", class_="event-card")  # Gerçek sınıf adı kontrol edilecek
-
     events = []
+    
+    # API yanıtını incele: data içinde mi? result içinde mi?
+    event_list = data.get("data", [])  # Veya data.get("result", []) vs.
 
-    for item in event_items[:10]:
+    for item in event_list:
         try:
-            # Başlık
-            title_elem = item.find("h3", class_="event-title")
-            if not title_elem:
-                title_elem = item.find("a", class_="event-link")  # Alternatif
-            title = title_elem.get_text(strip=True) if title_elem else "Etkinlik İsmi Yok"
+            # Gerekli alanlar var mı kontrol et
+            if not item.get("name") or not item.get("eventDate") or not item.get("venue"):
+                continue
 
-            # Tarih
-            date_elem = item.find("div", class_="event-date")
-            date_text = date_elem.get_text(strip=True) if date_elem else "Tarih Yok"
-            # Basit tarih formatı: "12 Eylül" → "2025-09-12"
-            match = re.search(r'(\d{1,2})\s+(\w+)', date_text)
-            if match:
-                day = match.group(1)
-                month_tr = match.group(2)
-                months = {"Ocak": "01", "Şubat": "02", "Mart": "03", "Nisan": "04",
-                         "Mayıs": "05", "Haziran": "06", "Temmuz": "07", "Ağustos": "08",
-                         "Eylül": "09", "Ekim": "10", "Kasım": "11", "Aralık": "12"}
-                month = months.get(month_tr, "01")
-                year = "2025"
-                formatted_date = f"{year}-{month}-{day.zfill(2)}"
-            else:
-                formatted_date = "2025-01-01"
+            # Tarih formatı: "2025-09-04T20:00:00" → "2025-09-04"
+            raw_date = item["eventDate"]
+            date_part = raw_date.split("T")[0]  # "2025-09-04"
+            time_part = raw_date.split("T")[1][:5] if "T" in raw_date else "19:00"  # "20:00"
 
-            # Mekan
-            venue_elem = item.find("div", class_="event-location")
-            venue = venue_elem.get_text(strip=True) if venue_elem else "Mekan Bilinmiyor"
-
-            # Link
-            link_elem = item.find("a", href=True)
-            link = urljoin("https://passo.com.tr", link_elem['href']) if link_elem else "#"
-
-            # 🗺️ Mekan adı düzeltme (Mapping)
-            venue_mapping = {
-                "Zorlu Center": "Zorlu Center",
-                "Vodafone Park": "Vodafone Park",
-                "Küçükçiftlik Parkı": "Küçükçiftlik Park",
-                "Bostancı Gösteri Merkezi": "Bostancı Gösteri Merkezi",
-                "Beşiktaş Stadyumu": "Vodafone Park",
-                "Şükrü Saracoğlu": "Vodafone Park"
-            }
-            cleaned_venue = venue_mapping.get(venue, venue)
-
-            # 🌍 KOORDİNAT AL
-            print(f"🔍 {cleaned_venue} için koordinat aranıyor...", file=sys.stderr)
-            lat, lng = get_coordinates(cleaned_venue)
-            time.sleep(1)  # Rate limit
+            venue = item["venue"]
+            lat = float(venue["latitude"]) if venue.get("latitude") else None
+            lng = float(venue["longitude"]) if venue.get("longitude") else None
 
             events.append({
-                "ad": title,
-                "tarih": formatted_date,
-                "saat": "19:00",  # Gerçek saat yok, tahmini
-                "mekan_adi": venue,
-                "link": link,
-                "aciklama": f"{title} etkinliği için detay: {link}",
+                "ad": item["name"],
+                "tarih": date_part,
+                "saat": time_part,
+                "mekan_adi": venue["name"],
+                "link": f"https://passo.com.tr/etkinlik/{item['id']}",
+                "aciklama": item.get("shortDescription", "Detay bulunamadı"),
                 "latitude": lat,
                 "longitude": lng
             })
         except Exception as e:
-            print(f"Veri hatası (passo): {e}", file=sys.stderr)
+            print(f"Veri işleme hatası: {e}", file=sys.stderr)
             continue
 
     print(f"{len(events)} etkinlik çekildi.", file=sys.stderr)
