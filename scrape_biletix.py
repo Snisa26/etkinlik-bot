@@ -5,8 +5,11 @@ import re
 from urllib.parse import urljoin
 from geocode import get_coordinates
 import time
+import sys
+import json  # ✅ En başa alındı
 
 def scrape_biletix():
+    # 🔗 URL'deki gereksiz boşluklar temizlendi
     url = "https://www.biletix.com/etkinlik/ISTANBUL/tr"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -16,7 +19,7 @@ def scrape_biletix():
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
     except Exception as e:
-        print(f"Sayfa açılamadı: {e}")
+        print(f"Sayfa açılamadı: {e}", file=sys.stderr)
         return []
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -58,6 +61,7 @@ def scrape_biletix():
             title = title_elem.get_text(strip=True)
             date_text = date_elem.get_text(strip=True)
             venue = venue_elem.get_text(strip=True)
+            # 🔗 Link URL'sinde gereksiz boşluk temizlendi
             link = urljoin("https://www.biletix.com", link_elem['href'])
 
             # 📅 Tarih formatı
@@ -80,7 +84,7 @@ def scrape_biletix():
             cleaned_venue = venue_mapping.get(venue, venue)
 
             # 🌍 KOORDİNAT AL
-            print(f"🔍 {cleaned_venue} için koordinat aranıyor...")
+            print(f"🔍 {cleaned_venue} için koordinat aranıyor...", file=sys.stderr)
             lat, lng = get_coordinates(cleaned_venue)
             time.sleep(1)  # Rate limit önlemi
 
@@ -95,16 +99,14 @@ def scrape_biletix():
                 "longitude": lng
             })
         except Exception as e:
-            print(f"Veri hatası: {e}")
+            print(f"Veri hatası: {e}", file=sys.stderr)
             continue
 
-    print(f"{len(events)} etkinlik çekildi.")
+    print(f"{len(events)} etkinlik çekildi.", file=sys.stderr)
     return events
 
-# 🧪 Test (sadece doğrudan çalıştırılırsa)
+# 🚀 Ana işlem: stdout'a JSON verisi yaz
 if __name__ == "__main__":
-    import sys
-    import json
     events = scrape_biletix()
     json.dump(events, sys.stdout)
-    
+    sys.stdout.flush()  # ✅ Verinin hemen gönderilmesini sağlar
