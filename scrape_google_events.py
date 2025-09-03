@@ -2,6 +2,7 @@
 import requests
 import json
 import sys
+import os
 
 def scrape_google_events():
     url = "https://serpapi.com/search"
@@ -9,7 +10,7 @@ def scrape_google_events():
         "engine": "google_events",
         "q": "etkinlikler Türkiye",
         "hl": "tr",
-        "api_key": "YOUR_API_KEY"
+        "api_key": os.getenv("SERPAPI_KEY")
     }
 
     try:
