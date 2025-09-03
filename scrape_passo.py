@@ -2,55 +2,79 @@
 import requests
 import sys
 import json
+import time
 
 def scrape_passo():
-    url = "https://cppasso2.mediatriple.net/30s/api/passoweb/getalleventgroups"
+    base_url = "https://cppasso2.mediatriple.net/30s/api/passoweb"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Referer": "https://passo.com.tr",
+        "Referer": "https://passo.com.tr/",
         "Origin": "https://passo.com.tr"
     }
 
+    events = []
+
+    # 1. Tüm grupları al
     try:
-        response = requests.get(url, headers=headers, timeout=15)
-        response.raise_for_status()
+        response = requests.get(f"{base_url}/getalleventgroups", headers=headers, timeout=15)
+        if response.status_code != 200:
+            print(f"❌ Gruplar alınamadı: {response.status_code}", file=sys.stderr)
+            return []
         data = response.json()
+        groups = data.get("valueList", [])
     except Exception as e:
-        print(f"API hatası: {e}", file=sys.stderr)
+        print(f"❌ Gruplar hatası: {e}", file=sys.stderr)
         return []
 
-    events = []
-    
-    # API yanıtını incele: data içinde mi? result içinde mi?
-    event_list = data.get("data", [])  # Veya data.get("result", []) vs.
+    print(f"🔍 {len(groups)} etkinlik grubu bulundu", file=sys.stderr)
 
-    for item in event_list:
+    # 2. Her grup için detay isteği at
+    for group in groups:
+        group_id = group["id"]
+        group_name = group["name"]
+        print(f"📂 {group_name} grubu işleniyor...", file=sys.stderr)
+
         try:
-            # Gerekli alanlar var mı kontrol et
-            if not item.get("name") or not item.get("eventDate") or not item.get("venue"):
+            detail_response = requests.get(f"{base_url}/geteventgroupdetail/{group_id}", headers=headers, timeout=15)
+            if detail_response.status_code != 200:
+                print(f"⚠️  Detay alınamadı ({group_id}): {detail_response.status_code}", file=sys.stderr)
                 continue
 
-            # Tarih formatı: "2025-09-04T20:00:00" → "2025-09-04"
-            raw_date = item["eventDate"]
-            date_part = raw_date.split("T")[0]  # "2025-09-04"
-            time_part = raw_date.split("T")[1][:5] if "T" in raw_date else "19:00"  # "20:00"
+            detail_data = detail_response.json()
+            event_list = detail_data.get("valueList", [])
 
-            venue = item["venue"]
-            lat = float(venue["latitude"]) if venue.get("latitude") else None
-            lng = float(venue["longitude"]) if venue.get("longitude") else None
+            for item in event_list:
+                try:
+                    if not item.get("name") or not item.get("eventDate") or not item.get("venue"):
+                        continue
 
-            events.append({
-                "ad": item["name"],
-                "tarih": date_part,
-                "saat": time_part,
-                "mekan_adi": venue["name"],
-                "link": f"https://passo.com.tr/etkinlik/{item['id']}",
-                "aciklama": item.get("shortDescription", "Detay bulunamadı"),
-                "latitude": lat,
-                "longitude": lng
-            })
+                    raw_date = item["eventDate"]
+                    date_part = raw_date.split("T")[0]  # "2025-09-04"
+                    time_part = raw_date.split("T")[1][:5] if "T" in raw_date else "19:00"
+
+                    venue = item["venue"]
+                    lat = float(venue["latitude"]) if venue.get("latitude") else None
+                    lng = float(venue["longitude"]) if venue.get("longitude") else None
+
+                    events.append({
+                        "ad": item["name"],
+                        "tarih": date_part,
+                        "saat": time_part,
+                        "mekan_adi": venue["name"],
+                        "link": f"https://passo.com.tr/etkinlik/{item['id']}",
+                        "aciklama": item.get("shortDescription", f"{group_name} kapsamında"),
+                        "latitude": lat,
+                        "longitude": lng
+                    })
+                except Exception as e:
+                    print(f"🟡 Etkinlik hatası: {e}", file=sys.stderr)
+                    continue
+
+            # Rate limit önlemi
+            time.sleep(1)
+
         except Exception as e:
-            print(f"Veri işleme hatası: {e}", file=sys.stderr)
+            print(f"❌ Detay isteği hatası ({group_id}): {e}", file=sys.stderr)
             continue
 
     print(f"{len(events)} etkinlik çekildi.", file=sys.stderr)
