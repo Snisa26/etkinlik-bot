@@ -19,7 +19,7 @@ jobs:
 
       - name: Kütüphaneleri yükle
         run: |
-          pip install requests beautifulsoup4 python-supabase
+          pip install requests beautifulsoup4 supabase
 
       - name: Etkinlikleri çek ve Supabase'e yükle
         env:
