@@ -1,7 +1,7 @@
 name: Etkinlik Botu
 
 on:
-  workflow_dispatch:  # Manuel çalıştırma için
+  workflow_dispatch:
   schedule:
     - cron: '0 3 * * *'  # Her gün 03:00 UTC (Türkiye saatiyle 06:00)
 
@@ -19,12 +19,11 @@ jobs:
 
       - name: Kütüphaneleri yükle
         run: |
-          pip install requests beautifulsoup4 supabase geopy
+          pip install requests supabase geopy
 
-      - name: Etkinlikleri çek ve Supabase'e yükle
+      - name: Google Etkinliklerinden çek ve Supabase'e yükle
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
         run: |
-          python scrape_passo.py | python supabase_upload.py
-          
+          sed -i 's/YOUR_API_KEY/${{ secrets.SERPAPI_KEY }}/' scrape_google_events.py
+          python scrape_google_events.py | python supabase_upload.py
