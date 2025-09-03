@@ -10,7 +10,7 @@ import json  # ✅ En başa alındı
 
 def scrape_biletix():
     # 🔗 URL'deki gereksiz boşluklar temizlendi
-    url = "https://www.biletix.com/etkinlik/ISTANBUL/tr"
+    url = "https://www.biletix.com/anasayfa/TURKIYE/tr"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     }
