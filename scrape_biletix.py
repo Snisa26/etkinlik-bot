@@ -1,11 +1,12 @@
 # scrape_biletix.py
 # scrape_biletix.py - en üste
-from geocode import get_coordinates
-import time
+
 import requests
 from bs4 import BeautifulSoup
 import re
 from urllib.parse import urljoin
+from geocode import get_coordinates
+import time
 
 def scrape_biletix():
     url = "https://www.biletix.com/etkinlik/ISTANBUL/tr"
@@ -72,6 +73,14 @@ def scrape_biletix():
         except Exception as e:
             print(f"Veri hatası: {e}")
             continue
-
+            
+# Test
+    if __name__ == "__main__":
+        print("🧪 TEST BAŞLIYOR")
+        test_venues = ["Zorlu Center", "Vodafone Park", "Küçükçiftlik Parkı", "Bostancı Gösteri Merkezi"]
+        for venue in test_venues:
+            lat, lng = get_coordinates(venue)
+            print(f"📍 {venue} → {lat}, {lng}")
     print(f"{len(events)} etkinlik çekildi.")
     return events
+    
